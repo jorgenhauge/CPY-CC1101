@@ -81,7 +81,9 @@ SWOR = 0x38  # Start automatic RX polling sequence (Wake-on-Radio)
 # as described in Section 19.5 if WORCTRL.RC_PD=0.
 
 SPWD = 0x39  # Enter power down mode when CSn goes high.
-SFRX = 0x3A  # Flush the RX FIFO buffer. Only issue SFRX in IDLE or RXFIFO_OVERFLOW states.
+SFRX = (
+    0x3A  # Flush the RX FIFO buffer. Only issue SFRX in IDLE or RXFIFO_OVERFLOW states.
+)
 SFTX = 0x3B  # Flush the TX FIFO buffer. Only issue SFTX in IDLE or TXFIFO_UNDERFLOW states.
 SWORRST = 0x3C  # Reset real time clock to Event1 value.
 SNOP = 0x3D  # No operation. May be used to get access to the chip status byte.
@@ -107,87 +109,98 @@ RXBYTES = 0xFB  # Overflow and Number of Bytes
 RCCTRL1_STATUS = 0xFC  # Last RC Oscillator Calibration Result
 RCCTRL0_STATUS = 0xFD  # Last RC Oscillator Calibration Result
 
-PA_TABLE = [0x00,0xC0,0x00,0x00,0x00,0x00,0x00,0x00]
+PA_TABLE = [0x00, 0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
 
 
 def writeSingleByte(address, byte_data):
     databuffer = bytearray([WRITE_SINGLE_BYTE | address, byte_data])
     with device as d:
-    	d.write(databuffer)
+        d.write(databuffer)
+
 
 def readSingleByte(address):
     databuffer = bytearray([READ_SINGLE_BYTE | address, 0x00])
-    
+
     with device as d:
-    	d.write(databuffer, end=1)
-    	d.readinto(databuffer, end=2)
+        d.write(databuffer, end=1)
+        d.readinto(databuffer, end=2)
     return databuffer[0]
 
-def readBurst(start_address, length):        
+
+def readBurst(start_address, length):
     databuffer = []
-    ret = bytearray(length+1)
+    ret = bytearray(length + 1)
 
     for x in range(length + 1):
-        addr = (start_address + (x*8)) | READ_BURST
+        addr = (start_address + (x * 8)) | READ_BURST
         databuffer.append(addr)
 
     with device as d:
         d.write_readinto(bytearray(databuffer), ret)
     return ret
 
+
 def writeBurst(address, data):
     data.insert(0, (WRITE_BURST | address))
     with device as d:
-    	d.write(bytearray(data))
+        d.write(bytearray(data))
+
 
 def strobe(address):
     databuffer = bytearray([address, 0x00])
     with device as d:
-    	d.write(databuffer, end=1)
-    	d.readinto(databuffer, end=2)
+        d.write(databuffer, end=1)
+        d.readinto(databuffer, end=2)
     return databuffer
+
 
 mySPI = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
 cs = DigitalInOut(board.D9)
 gdo0 = DigitalInOut(board.D10)
-device = SPIDevice(mySPI, cs, baudrate=50000, polarity=0, phase=0) 
+device = SPIDevice(mySPI, cs, baudrate=50000, polarity=0, phase=0)
 strobe(SRES)
 
-writeSingleByte(IOCFG2, 0x29)    
-writeSingleByte(IOCFG1, 0x2E)    
-writeSingleByte(IOCFG0, 0x06)    
-writeSingleByte(FIFOTHR, 0x47)   
+writeSingleByte(IOCFG2, 0x29)
+writeSingleByte(IOCFG1, 0x2E)
+writeSingleByte(IOCFG0, 0x06)
+writeSingleByte(FIFOTHR, 0x47)
 writeSingleByte(SYNC1, 0x66)
 writeSingleByte(SYNC0, 0x6A)
-writeSingleByte(PKTLEN, 0x15)    
-writeSingleByte(PKTCTRL1, 0x04)  
-writeSingleByte(PKTCTRL0, 0x04)  
+writeSingleByte(PKTLEN, 0x15)
+writeSingleByte(PKTCTRL1, 0x04)
+writeSingleByte(PKTCTRL0, 0x04)
 writeSingleByte(ADDR, 0x00)
 writeSingleByte(CHANNR, 0x00)
-writeSingleByte(FSCTRL1, 0x06)   
-writeSingleByte(FSCTRL0, 0x00)   
-writeSingleByte(FREQ2, 0x10)	  #. 0x10 <- 434.4 (theory) # 0x10 <- exactly on 434.4 (measured) .#
-writeSingleByte(FREQ1, 0xB5)	  #. 0xB5 <- 434.4 (theory) # 0xB5 <- exactly on 434.4 (measured) .#
-writeSingleByte(FREQ0, 0xA9)	  #. 0x2B <- 434.4 (theory) # 0xA9 <- exactly on 434.4 (measured) .#
-writeSingleByte(MDMCFG4, 0x87)    
-writeSingleByte(MDMCFG3, 0x10)    
-writeSingleByte(MDMCFG2, 0x32)   
-writeSingleByte(MDMCFG1, 0x22)   
+writeSingleByte(FSCTRL1, 0x06)
+writeSingleByte(FSCTRL0, 0x00)
+writeSingleByte(
+    FREQ2, 0x10
+)  # . 0x10 <- 434.4 (theory) # 0x10 <- exactly on 434.4 (measured) .#
+writeSingleByte(
+    FREQ1, 0xB5
+)  # . 0xB5 <- 434.4 (theory) # 0xB5 <- exactly on 434.4 (measured) .#
+writeSingleByte(
+    FREQ0, 0xA9
+)  # . 0x2B <- 434.4 (theory) # 0xA9 <- exactly on 434.4 (measured) .#
+writeSingleByte(MDMCFG4, 0x87)
+writeSingleByte(MDMCFG3, 0x10)
+writeSingleByte(MDMCFG2, 0x32)
+writeSingleByte(MDMCFG1, 0x22)
 writeSingleByte(MDMCFG0, 0xF8)
-writeSingleByte(DEVIATN, 0x00)   
+writeSingleByte(DEVIATN, 0x00)
 writeSingleByte(MCSM2, 0x07)
-writeSingleByte(MCSM1, 0x30)     
+writeSingleByte(MCSM1, 0x30)
 writeSingleByte(MCSM0, 0x18)
 writeSingleByte(FOCCFG, 0x16)
 writeSingleByte(BSCFG, 0x6C)
-writeSingleByte(AGCCTRL2, 0x04)  
-writeSingleByte(AGCCTRL1, 0x00)  
+writeSingleByte(AGCCTRL2, 0x04)
+writeSingleByte(AGCCTRL1, 0x00)
 writeSingleByte(AGCCTRL0, 0x91)
 writeSingleByte(WOREVT1, 0x87)
 writeSingleByte(WOREVT0, 0x6B)
 writeSingleByte(WORCTRL, 0xFB)
-writeSingleByte(FREND1, 0x56)    
-writeSingleByte(FREND0, 0x11)    
+writeSingleByte(FREND1, 0x56)
+writeSingleByte(FREND0, 0x11)
 writeSingleByte(FSCAL3, 0xE9)
 writeSingleByte(FSCAL2, 0x2A)
 writeSingleByte(FSCAL1, 0x00)
@@ -195,10 +208,10 @@ writeSingleByte(FSCAL0, 0x1F)
 writeSingleByte(RCCTRL1, 0x41)
 writeSingleByte(RCCTRL0, 0x00)
 writeSingleByte(FSTEST, 0x59)
-writeSingleByte(PTEST, 0x7F)   
+writeSingleByte(PTEST, 0x7F)
 writeSingleByte(AGCTEST, 0x3F)
-writeSingleByte(TEST2, 0x81)     
-writeSingleByte(TEST1, 0x35)     
+writeSingleByte(TEST2, 0x81)
+writeSingleByte(TEST1, 0x35)
 writeSingleByte(TEST0, 0x09)
 
 writeBurst(PATABLE, PA_TABLE)
@@ -208,15 +221,15 @@ strobe(SRX)
 print("waiting for data")
 
 while gdo0.value == False:
-    pass 
-#detected rising edge
+    pass
+# detected rising edge
 
 while gdo0.value == True:
     pass
-#detected falling edge
+# detected falling edge
 
-data_len = 0x17 # PKTLEN is programmed to 0x17, add 2 status bytes
+data_len = 0x17  # PKTLEN is programmed to 0x17, add 2 status bytes
 data = readBurst(RXFIFO, data_len)
-dataStr = ''.join(list(map(lambda x: "{0:0>8}".format(x[2:]), list(map(bin, data)))))
+dataStr = "".join(list(map(lambda x: "{0:0>8}".format(x[2:]), list(map(bin, data)))))
 newStr = dataStr[8:]
 print("Data: ", newStr)

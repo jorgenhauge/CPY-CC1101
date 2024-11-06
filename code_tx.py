@@ -81,7 +81,9 @@ SWOR = 0x38  # Start automatic RX polling sequence (Wake-on-Radio)
 # as described in Section 19.5 if WORCTRL.RC_PD=0.
 
 SPWD = 0x39  # Enter power down mode when CSn goes high.
-SFRX = 0x3A  # Flush the RX FIFO buffer. Only issue SFRX in IDLE or RXFIFO_OVERFLOW states.
+SFRX = (
+    0x3A  # Flush the RX FIFO buffer. Only issue SFRX in IDLE or RXFIFO_OVERFLOW states.
+)
 SFTX = 0x3B  # Flush the TX FIFO buffer. Only issue SFTX in IDLE or TXFIFO_UNDERFLOW states.
 SWORRST = 0x3C  # Reset real time clock to Event1 value.
 SNOP = 0x3D  # No operation. May be used to get access to the chip status byte.
@@ -107,86 +109,97 @@ RXBYTES = 0xFB  # Overflow and Number of Bytes
 RCCTRL1_STATUS = 0xFC  # Last RC Oscillator Calibration Result
 RCCTRL0_STATUS = 0xFD  # Last RC Oscillator Calibration Result
 
-PA_TABLE = [0x00,0xC0,0x00,0x00,0x00,0x00,0x00,0x00]
+PA_TABLE = [0x00, 0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
 
 
 def writeSingleByte(address, byte_data):
     databuffer = bytearray([WRITE_SINGLE_BYTE | address, byte_data])
     with device as d:
-    	d.write(databuffer)
+        d.write(databuffer)
+
 
 def readSingleByte(address):
     databuffer = bytearray([READ_SINGLE_BYTE | address, 0x00])
-    
+
     with device as d:
-    	d.write(databuffer, end=1)
-    	d.readinto(databuffer, end=2)
+        d.write(databuffer, end=1)
+        d.readinto(databuffer, end=2)
     return databuffer[0]
 
-def readBurst(start_address, length):        
+
+def readBurst(start_address, length):
     databuffer = []
-    ret = bytearray(length+1)
+    ret = bytearray(length + 1)
 
     for x in range(length + 1):
-        addr = (start_address + (x*8)) | READ_BURST
+        addr = (start_address + (x * 8)) | READ_BURST
         databuffer.append(addr)
 
     device.write_readinto(bytearray(databuffer), ret)
     return ret
 
+
 def writeBurst(address, data):
     data.insert(0, (WRITE_BURST | address))
     with device as d:
-    	d.write(bytearray(data))
+        d.write(bytearray(data))
+
 
 def strobe(address):
     databuffer = bytearray([address, 0x00])
     with device as d:
-    	d.write(databuffer, end=1)
-    	d.readinto(databuffer, end=2)
+        d.write(databuffer, end=1)
+        d.readinto(databuffer, end=2)
     return databuffer
+
 
 mySPI = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
 cs = DigitalInOut(board.D9)
 gdo0 = DigitalInOut(board.D10)
-device = SPIDevice(mySPI, cs, baudrate=50000, polarity=0, phase=0) 
+device = SPIDevice(mySPI, cs, baudrate=50000, polarity=0, phase=0)
 strobe(SRES)
 
-writeSingleByte(IOCFG2, 0x69)    
-writeSingleByte(IOCFG1, 0x6E)    
-writeSingleByte(IOCFG0, 0x46)    
-writeSingleByte(FIFOTHR, 0x47)   
+writeSingleByte(IOCFG2, 0x69)
+writeSingleByte(IOCFG1, 0x6E)
+writeSingleByte(IOCFG0, 0x46)
+writeSingleByte(FIFOTHR, 0x47)
 writeSingleByte(SYNC1, 0x66)
 writeSingleByte(SYNC0, 0x6A)
-writeSingleByte(PKTLEN, 0x0A)    
-writeSingleByte(PKTCTRL1, 0x04)  
-writeSingleByte(PKTCTRL0, 0x04)  
+writeSingleByte(PKTLEN, 0x0A)
+writeSingleByte(PKTCTRL1, 0x04)
+writeSingleByte(PKTCTRL0, 0x04)
 writeSingleByte(ADDR, 0x00)
 writeSingleByte(CHANNR, 0x00)
-writeSingleByte(FSCTRL1, 0x06)   
-writeSingleByte(FSCTRL0, 0x00)   
-writeSingleByte(FREQ2, 0x10)	  #. 0x10 <- 434.4 (theory) # 0x10 <- exactly on 434.4 (measured) .#
-writeSingleByte(FREQ1, 0xB5)	  #. 0xB5 <- 434.4 (theory) # 0xB5 <- exactly on 434.4 (measured) .#
-writeSingleByte(FREQ0, 0xA9)	  #. 0x2B <- 434.4 (theory) # 0xA9 <- exactly on 434.4 (measured) .#
-writeSingleByte(MDMCFG4, 0xE7)    
-writeSingleByte(MDMCFG3, 0x10)    
-writeSingleByte(MDMCFG2, 0x30)    #. 32 would be 16/16 sync word bits .#
-writeSingleByte(MDMCFG1, 0x22)   
+writeSingleByte(FSCTRL1, 0x06)
+writeSingleByte(FSCTRL0, 0x00)
+writeSingleByte(
+    FREQ2, 0x10
+)  # . 0x10 <- 434.4 (theory) # 0x10 <- exactly on 434.4 (measured) .#
+writeSingleByte(
+    FREQ1, 0xB5
+)  # . 0xB5 <- 434.4 (theory) # 0xB5 <- exactly on 434.4 (measured) .#
+writeSingleByte(
+    FREQ0, 0xA9
+)  # . 0x2B <- 434.4 (theory) # 0xA9 <- exactly on 434.4 (measured) .#
+writeSingleByte(MDMCFG4, 0xE7)
+writeSingleByte(MDMCFG3, 0x10)
+writeSingleByte(MDMCFG2, 0x30)  # . 32 would be 16/16 sync word bits .#
+writeSingleByte(MDMCFG1, 0x22)
 writeSingleByte(MDMCFG0, 0xF8)
-writeSingleByte(DEVIATN, 0x15)   
+writeSingleByte(DEVIATN, 0x15)
 writeSingleByte(MCSM2, 0x07)
-writeSingleByte(MCSM1, 0x20)     
+writeSingleByte(MCSM1, 0x20)
 writeSingleByte(MCSM0, 0x18)
 writeSingleByte(FOCCFG, 0x14)
 writeSingleByte(BSCFG, 0x6C)
-writeSingleByte(AGCCTRL2, 0x03)  
-writeSingleByte(AGCCTRL1, 0x00)  
+writeSingleByte(AGCCTRL2, 0x03)
+writeSingleByte(AGCCTRL1, 0x00)
 writeSingleByte(AGCCTRL0, 0x92)
 writeSingleByte(WOREVT1, 0x87)
 writeSingleByte(WOREVT0, 0x6B)
 writeSingleByte(WORCTRL, 0xFB)
-writeSingleByte(FREND1, 0x56)    
-writeSingleByte(FREND0, 0x11)    
+writeSingleByte(FREND1, 0x56)
+writeSingleByte(FREND0, 0x11)
 writeSingleByte(FSCAL3, 0xE9)
 writeSingleByte(FSCAL2, 0x2A)
 writeSingleByte(FSCAL1, 0x00)
@@ -194,18 +207,18 @@ writeSingleByte(FSCAL0, 0x1F)
 writeSingleByte(RCCTRL1, 0x41)
 writeSingleByte(RCCTRL0, 0x00)
 writeSingleByte(FSTEST, 0x59)
-writeSingleByte(PTEST, 0x7F)   
+writeSingleByte(PTEST, 0x7F)
 writeSingleByte(AGCTEST, 0x3F)
-writeSingleByte(TEST2, 0x81)     
-writeSingleByte(TEST1, 0x35)     
+writeSingleByte(TEST2, 0x81)
+writeSingleByte(TEST1, 0x35)
 writeSingleByte(TEST0, 0x0B)
 
 writeBurst(PATABLE, PA_TABLE)
 
 bitstring = "10101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010100110011001101010100101011010100101101010101010101001101010010101010110101001011010011010011010101010101001010110011001011001101010011010100110100101100110101010010110011001011010101010010101101000"
 data = []
-for i in range(0,len(bitstring)/8):
-    data.append(int(bitstring[i*8:i*8+8], 2))
+for i in range(0, len(bitstring) / 8):
+    data.append(int(bitstring[i * 8 : i * 8 + 8], 2))
 
 writeSingleByte(PKTLEN, len(data))
 strobe(SRX)
@@ -213,10 +226,10 @@ strobe(SRX)
 marcstate = readSingleByte(MARCSTATE) & 0x1F
 dataToSend = []
 
-while (marcstate != 0x0D):
+while marcstate != 0x0D:
     marcstate = readSingleByte(MARCSTATE) & 0x1F
 
-print(''.join(list(map(lambda x: "{0:0>8}".format(str(bin(x)[2:])), data))))
+print("".join(list(map(lambda x: "{0:0>8}".format(str(bin(x)[2:])), data))))
 
 print("Sending packet of", len(data), "bytes")
 
@@ -228,7 +241,7 @@ remaining_bytes = readSingleByte(TXBYTES) & 0x7F
 while remaining_bytes != 0:
     time.sleep(0.001)
     remaining_bytes = readSingleByte(TXBYTES) & 0x7F
-    #print("Waiting until all bytes are transmited, remaining bytes: %d" % remaining_bytes)
+    # print("Waiting until all bytes are transmited, remaining bytes: %d" % remaining_bytes)
 
 if (readSingleByte(TXBYTES) & 0x7F) == 0:
     print("Packet sent!")
